@@ -177,7 +177,7 @@ void audioToTextFile(String fileName) {
     }
 
     fftL.forward( fftSamplesL );
-    fftR.forward( fftSamplesL );
+    fftR.forward( fftSamplesR );
 
     // The format of the saved txt file.
     // The file contains many rows. Each row looks like this:
