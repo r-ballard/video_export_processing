@@ -5,13 +5,14 @@ import ddf.minim.spi.*;
 
 VideoExport videoExport;
 
-//String audioFilePath = "jingle.mp3";
-String audioFilePath = "C:\\Users\\busybox\\Desktop\\sounds\\k_o_m\\TRACKS\\4tune.wav";
+String audioFilePath = "song_path";
 
 String SEP = "|";
 float movieFPS = 30;
 float frameDuration = 1 / movieFPS;
 BufferedReader reader;
+
+FFT fft;
 
 /*
    Example to visualize sound frequencies from
@@ -21,7 +22,7 @@ BufferedReader reader;
    is tricky. It gets easily out of sync.
     
    One approach, used in this example, is:
-   forward
+   
    Pass 1. Analyze the sound in a Processing sketch 
            and output a text file including the FFT 
            analysis data.
@@ -136,9 +137,6 @@ void draw() {
   }
 }
 
-
-
-int forwardCount=0;
 // Minim based audio FFT to data text file conversion.
 // Non real-time, so you don't wait 5 minutes for a 5 minute song :)
 // You can look at the produced txt file in the data folder
@@ -149,31 +147,49 @@ void audioToTextFile(String fileName) {
   Minim minim = new Minim(this);
   output = createWriter(dataPath(fileName + ".txt"));
 
-  AudioSample track = minim.loadSample(fileName, 1024);
   //AudioSample track = minim.loadSample(fileName, 2048);
+  AudioSample track = minim.loadSample(fileName, 1024);
 
   int fftSize = 1024;
   float sampleRate = track.sampleRate();
 
-  float[] fftSamplesL = new float[fftSize];
+  fft = new FFT(track.bufferSize(), track.sampleRate());
+  //print("fft specsize test: ",fft.specSize(),"\n");
+
+  float[] fftSamplesL = new float[fftSize]; 
   float[] fftSamplesR = new float[fftSize];
+  float[] fftSamplesAvg = new float[fftSize];
 
   float[] samplesL = track.getChannel(AudioSample.LEFT);
   float[] samplesR = track.getChannel(AudioSample.RIGHT);  
+ 
 
   FFT fftL = new FFT(fftSize, sampleRate);
   FFT fftR = new FFT(fftSize, sampleRate);
 
+  
+  //Now calculate for specSize rather than 30 averages
   //fftL.logAverages(22, 3);
   //fftR.logAverages(22, 3);
-
-  fftL.linAverages(513);
-  fftR.linAverages(513);
-
+  
+  //print("fftL.avgSize: ",fftL.avgSize(),"\n");
+ 
+  
   int totalChunks = (samplesL.length / fftSize) + 1;
-  int fftSlices = fftL.avgSize();
+  //int fftSlices = fftL.avgSize();
+  int fftSlices = 513;
+ 
+  print("fft.Size: ", fftSize,"\n");
+  print("fftL.specSize(): ", fftL.specSize(),"\n");
+  print("sampleRate: ", sampleRate,"\n");
   print("fftSlices: ",fftSlices,"\n");
+  print("samplesL.length:", samplesL.length,"\n");
+  print("totalChunks: ", totalChunks,"\n");
+  print("fftSlices: ", fftSlices,"\n");
 
+  /*for(int i = 0; i <fft.specSize(); i++){
+    print("Band i:",fftL.getBand(i),"\n");
+  }*/
 
   for (int ci = 0; ci < totalChunks; ++ci) {
     int chunkStartIndex = ci * fftSize;   
@@ -187,8 +203,6 @@ void audioToTextFile(String fileName) {
     }
 
     fftL.forward( fftSamplesL );
-    forwardCount++;
-    //print("forwardCount: ",forwardCount,"\n");
     fftR.forward( fftSamplesL );
 
     // The format of the saved txt file.
@@ -201,8 +215,13 @@ void audioToTextFile(String fileName) {
     // the end of the line.
     StringBuilder msg = new StringBuilder(nf(chunkStartIndex/sampleRate, 0, 3).replace(',', '.'));
     for (int i=0; i<fftSlices; ++i) {
-      msg.append(SEP + nf(fftL.getAvg(i), 0, 4).replace(',', '.'));
-      msg.append(SEP + nf(fftR.getAvg(i), 0, 4).replace(',', '.'));
+      //msg.append(SEP + nf(fftL.getAvg(i), 0, 4).replace(',', '.'));
+      //msg.append(SEP + nf(fftR.getAvg(i), 0, 4).replace(',', '.'));
+      float fftAvg = (fftL.getBand(i) + fftR.getBand(i))/2;
+      
+      //msg.append(SEP + nf(fftL.getBand(i), 0, 4).replace(',', '.'));
+      //msg.append(SEP + nf(fftR.getBand(i), 0, 4).replace(',', '.'));
+      msg.append(SEP + nf(fftAvg, 0, 4).replace(',', '.'));
     }
     output.println(msg.toString());
   }
