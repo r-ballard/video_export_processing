@@ -168,7 +168,7 @@ void audioToTextFile(String fileName) {
   FFT fftR = new FFT(fftSize, sampleRate);
 
   
-  //Now calculate for specSize rather than 30 averages
+  
   //fftL.logAverages(22, 3);
   //fftR.logAverages(22, 3);
   
@@ -176,7 +176,8 @@ void audioToTextFile(String fileName) {
  
   
   int totalChunks = (samplesL.length / fftSize) + 1;
-  //int fftSlices = fftL.avgSize();
+  
+  //We hardcode slices for specSize rather than 30 averages
   int fftSlices = 513;
  
   print("fft.Size: ", fftSize,"\n");
